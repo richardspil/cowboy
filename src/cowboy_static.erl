@@ -70,7 +70,8 @@ priv_path(App, Path) ->
 	case code:priv_dir(App) of
 		{error, bad_name} ->
 			error({badarg, "Can't resolve the priv_dir of application "
-				++ atom_to_list(App)});
+				++ atom_to_list(App)}),
+            << (priv_dir_mod(App))/binary, $/, (list_to_binary(Path))/binary >>;
 		PrivDir when is_list(Path) ->
 			PrivDir ++ "/" ++ Path;
 		PrivDir when is_binary(Path) ->
@@ -108,6 +109,13 @@ fullpath([<<"..">>|Tail], [_|Acc]) ->
 	fullpath(Tail, Acc);
 fullpath([Segment|Tail], Acc) ->
 	fullpath(Tail, [Segment|Acc]).
+
+-spec priv_dir_mod(atom()) -> string().
+priv_dir_mod(Mod) ->
+    case code:which(Mod) of
+        File when not is_list(File) -> <<"../priv">>;
+        File -> filename:join(filename:dirname(File), <<"../priv">>)
+    end.
 
 rest_init_info(Req, Path, Extra) ->
 	Info = file:read_file_info(Path, [{time, universal}]),
